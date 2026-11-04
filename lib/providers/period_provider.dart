@@ -2,43 +2,29 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-part "period_provider.g.dart";
-part "period_provider.freezed.dart";
+part 'period_provider.g.dart';
+part 'period_provider.freezed.dart';
 
-const String prefKey = "co2Period";
+const _prefKeyPeriod = 'period';
 
 @freezed
-class Period with _$Period {
-  factory Period({
-    required int period,
-  }) = _Period;
+class PeriodState with _$PeriodState {
+  const factory PeriodState({required int period}) = _PeriodState;
 }
 
 @riverpod
 class PeriodNotifier extends _$PeriodNotifier {
   @override
-  Future<Period> build() async {
-    return await getPeriod();
+  Future<PeriodState> build() async {
+    final prefs = await SharedPreferences.getInstance();
+    final period = prefs.getInt(_prefKeyPeriod) ?? 1;
+    return PeriodState(period: period);
   }
 
-  Future<Period> getPeriod() async {
-    state = const AsyncValue.loading();
-    var period = Period(period: 6);
+  /// Sets the chart period in hours and persists it.
+  Future<void> setPeriod(int period) async {
     final prefs = await SharedPreferences.getInstance();
-    if (!prefs.containsKey(prefKey)) {
-      prefs.setInt(prefKey, period.period);
-    } else {
-      period = Period(period: prefs.getInt(prefKey)!);
-    }
-    state = AsyncValue.data(period);
-
-    return period;
-  }
-
-  Future<void> setPeriod(int periodToSet) async {
-    state = const AsyncValue.loading();
-    final prefs = await SharedPreferences.getInstance();
-    prefs.setInt(prefKey, periodToSet);
-    state = AsyncValue.data(Period(period: periodToSet));
+    await prefs.setInt(_prefKeyPeriod, period);
+    state = AsyncData(PeriodState(period: period));
   }
 }

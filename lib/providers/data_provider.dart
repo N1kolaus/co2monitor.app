@@ -1,168 +1,108 @@
 import 'dart:async';
-import 'dart:convert';
 
-import 'package:co2app/providers/init_provider.dart';
+import 'package:co2app/models/co2_data.dart';
+import 'package:co2app/providers/api_config_provider.dart';
 import 'package:co2app/providers/period_provider.dart';
-import "package:http/http.dart" as http;
+import 'package:co2app/services/co2_api_client.dart';
+import 'package:http/http.dart' as http;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-part "data_provider.g.dart";
+part 'data_provider.g.dart';
 
-List<Co2Data> co2DataFromJson(String str) =>
-    List<Co2Data>.from(json.decode(str).map((x) => Co2Data.fromJson(x)));
+/// Shared HTTP client for the CO2 API. Overridden with a fake in tests.
+final httpClientProvider = Provider<http.Client>((ref) => http.Client());
 
-Co2Data latestCo2DataFromJson(String str) => Co2Data.fromJson(json.decode(str));
+/// How often the latest reading is polled while the dashboard is active.
+/// Overridden in tests.
+final pollIntervalProvider =
+    Provider<Duration>((ref) => const Duration(minutes: 1));
 
-class Co2Data {
-  Co2Data({
-    required this.date,
-    required this.temp,
-    required this.co2,
-    required this.location,
-  });
-
-  final DateTime date;
-  final double temp;
-  final int co2;
-  final int location;
-
-  factory Co2Data.fromRawJson(String str) => Co2Data.fromJson(json.decode(str));
-
-  factory Co2Data.fromJson(Map<String, dynamic> json) => Co2Data(
-        date: DateTime.parse(json["created_at"]).toLocal(),
-        temp: json["temp"]?.toDouble(),
-        co2: json["co2"],
-        location: json["location_id"],
-      );
-}
-
+/// The dashboard data: the readings for the selected period plus the most
+/// recent reading, kept up to date by a background poll every minute.
 @riverpod
-class Data extends _$Data {
+class Co2Data extends _$Co2Data {
+  Timer? _timer;
+
   @override
-  Future<List<Co2Data>> build() async {
-    return await getData();
-  }
-
-  Future<List<Co2Data>> getData() async {
-    final period = await ref
-        .watch(periodNotifierProvider.selectAsync((data) => data.period));
-    final apiUrl =
-        await ref.watch(initStateProvider.selectAsync((data) => data.apiUrl));
-    final apiKey =
-        await ref.watch(initStateProvider.selectAsync((data) => data.apiKey));
-    state = const AsyncValue.loading();
-    if (apiUrl == "" || apiKey == "") {
-      state = const AsyncValue.data([]);
-      return [];
-    }
-    try {
-      final url = Uri.parse(
-        "$apiUrl/api/co2data/1/search?period=${period}h",
-      );
-      final response = await http.get(url, headers: {
-        "X-API-KEY": apiKey,
-      });
-      final data = co2DataFromJson(response.body);
-
-      state = AsyncValue.data(data);
-
-      return data;
-    } catch (err) {
-      state = AsyncError(err, StackTrace.current);
-
-      rethrow;
-    }
-  }
-
-  Future<void> updateData(Co2Data latestData) async {
-    state = const AsyncValue.loading();
-    state.value!.removeAt(0);
-    state = AsyncValue.data([...state.value!, latestData]);
-  }
-}
-
-@riverpod
-class LatestData extends _$LatestData {
-  @override
-  Future<Co2Data> build() async {
-    return await getLatestData();
-  }
-
-  Future<Co2Data> getLatestData() async {
-    state = const AsyncValue.loading();
-    final apiUrl =
-        await ref.watch(initStateProvider.selectAsync((data) => data.apiUrl));
-    final apiKey =
-        await ref.watch(initStateProvider.selectAsync((data) => data.apiKey));
-    final url = Uri.parse(
-      "$apiUrl/api/co2data/1/latest",
+  Future<Co2Dashboard> build() async {
+    _timer?.cancel();
+    final config = ref.watch(apiConfigNotifierProvider).valueOrNull;
+    final period = ref.watch(
+      periodNotifierProvider.select(
+        (state) => state.value?.period ?? 1,
+      ),
     );
-    if (apiUrl == "" || apiKey == "") {
-      state = AsyncValue.data(Co2Data(
-        date: DateTime.now(),
-        temp: 0,
-        co2: 0,
-        location: 0,
-      ));
-      return Co2Data(
-        date: DateTime.now(),
-        temp: 0,
-        co2: 0,
-        location: 0,
-      );
+    final api = _client(config);
+    if (api == null) {
+      return Co2Dashboard(series: const [], latest: Co2Reading.placeholder());
+    }
+    _startPolling();
+    return _fetch(api, period);
+  }
+
+  /// Re-fetches the series and the latest reading (pull-to-refresh).
+  /// On failure the last good data is kept and the error is rethrown so
+  /// the caller can surface it to the user.
+  Future<void> refresh() async {
+    final config =
+        ref.read(apiConfigNotifierProvider).valueOrNull;
+    final period = ref
+        .read(periodNotifierProvider.select((state) => state.value?.period ?? 1));
+    final api = _client(config);
+    if (api == null) {
+      state = AsyncData(
+          Co2Dashboard(series: const [], latest: Co2Reading.placeholder()));
+      return;
     }
     try {
-      final response = await http.get(url, headers: {
-        "X-API-KEY": apiKey,
-      });
-      final latestData = latestCo2DataFromJson(response.body);
-
-      state = AsyncValue.data(latestData);
-
-      return latestData;
-    } catch (err) {
-      state = AsyncError(err, StackTrace.current);
-
-      rethrow;
+      state = AsyncData(await _fetch(api, period));
+    } catch (error, stackTrace) {
+      // Keep the last good data; the caller surfaces the error to the user.
+      Error.throwWithStackTrace(error, stackTrace);
     }
   }
 
-  Future<Co2Data> updateLatestData() async {
-    state = const AsyncValue.loading();
-    final apiUrl =
-        await ref.watch(initStateProvider.selectAsync((data) => data.apiUrl));
-    final apiKey =
-        await ref.watch(initStateProvider.selectAsync((data) => data.apiKey));
-    final url = Uri.parse(
-      "$apiUrl/api/co2data/1/latest",
-    );
-    if (apiUrl == "" || apiKey == "") {
-      state = AsyncValue.data(Co2Data(
-        date: DateTime.now(),
-        temp: 0,
-        co2: 0,
-        location: 0,
-      ));
-      return Co2Data(
-        date: DateTime.now(),
-        temp: 0,
-        co2: 0,
-        location: 0,
-      );
+  Co2ApiClient? _client(ApiConfig? config) {
+    if (config == null || !config.isConfigured) {
+      return null;
     }
+    return Co2ApiClient(
+      client: ref.read(httpClientProvider),
+      baseUrl: config.apiUrl,
+      apiKey: config.apiKey,
+    );
+  }
+
+  Future<Co2Dashboard> _fetch(Co2ApiClient api, int period) async {
+    final series = await api.fetchRange(period);
+    final latest = await api.fetchLatest();
+    return Co2Dashboard(series: series, latest: latest);
+  }
+
+  void _startPolling() {
+    _timer = Timer.periodic(ref.read(pollIntervalProvider), (_) {
+      unawaited(_poll());
+    });
+    ref.onDispose(() => _timer?.cancel());
+  }
+
+  /// Appends the newest reading to the series, dropping the oldest one to
+  /// keep the window size stable. A failed poll keeps the last good data.
+  Future<void> _poll() async {
     try {
-      final response = await http.get(url, headers: {
-        "X-API-KEY": apiKey,
-      });
-      final latestData = latestCo2DataFromJson(response.body);
-
-      state = AsyncValue.data(latestData);
-
-      return latestData;
-    } catch (err) {
-      state = AsyncError(err, StackTrace.current);
-
-      rethrow;
+      final config = ref.read(apiConfigNotifierProvider).valueOrNull;
+      final api = _client(config);
+      if (api == null) return;
+      final latest = await api.fetchLatest();
+      final current = state.valueOrNull;
+      if (current == null) return;
+      final series = current.series;
+      state = AsyncData(Co2Dashboard(
+        series: [...series.skip(1), latest],
+        latest: latest,
+      ));
+    } catch (_) {
+      // Ignore: the next poll retries and the UI keeps the last good data.
     }
   }
 }

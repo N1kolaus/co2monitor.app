@@ -6,12 +6,12 @@ part of 'period_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$periodNotifierHash() => r'3d29b3d188bc03fa2661ac353a61108d231a8b25';
+String _$periodNotifierHash() => r'fba08a7f4f7c72b6af71be66a6eb0e0701b7a877';
 
 /// See also [PeriodNotifier].
 @ProviderFor(PeriodNotifier)
 final periodNotifierProvider =
-    AutoDisposeAsyncNotifierProvider<PeriodNotifier, Period>.internal(
+    AutoDisposeAsyncNotifierProvider<PeriodNotifier, PeriodState>.internal(
   PeriodNotifier.new,
   name: r'periodNotifierProvider',
   debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
@@ -21,5 +21,6 @@ final periodNotifierProvider =
   allTransitiveDependencies: null,
 );
 
-typedef _$PeriodNotifier = AutoDisposeAsyncNotifier<Period>;
-// ignore_for_file: unnecessary_raw_strings, subtype_of_sealed_class, invalid_use_of_internal_member, do_not_use_environment, prefer_const_constructors, public_member_api_docs, avoid_private_typedef_functions
+typedef _$PeriodNotifier = AutoDisposeAsyncNotifier<PeriodState>;
+// ignore_for_file: type=lint
+// ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member

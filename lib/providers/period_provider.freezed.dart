@@ -15,25 +15,27 @@ final _privateConstructorUsedError = UnsupportedError(
     'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#custom-getters-and-methods');
 
 /// @nodoc
-mixin _$Period {
+mixin _$PeriodState {
   int get period => throw _privateConstructorUsedError;
 
   @JsonKey(ignore: true)
-  $PeriodCopyWith<Period> get copyWith => throw _privateConstructorUsedError;
+  $PeriodStateCopyWith<PeriodState> get copyWith =>
+      throw _privateConstructorUsedError;
 }
 
 /// @nodoc
-abstract class $PeriodCopyWith<$Res> {
-  factory $PeriodCopyWith(Period value, $Res Function(Period) then) =
-      _$PeriodCopyWithImpl<$Res, Period>;
+abstract class $PeriodStateCopyWith<$Res> {
+  factory $PeriodStateCopyWith(
+          PeriodState value, $Res Function(PeriodState) then) =
+      _$PeriodStateCopyWithImpl<$Res, PeriodState>;
   @useResult
   $Res call({int period});
 }
 
 /// @nodoc
-class _$PeriodCopyWithImpl<$Res, $Val extends Period>
-    implements $PeriodCopyWith<$Res> {
-  _$PeriodCopyWithImpl(this._value, this._then);
+class _$PeriodStateCopyWithImpl<$Res, $Val extends PeriodState>
+    implements $PeriodStateCopyWith<$Res> {
+  _$PeriodStateCopyWithImpl(this._value, this._then);
 
   // ignore: unused_field
   final $Val _value;
@@ -55,19 +57,22 @@ class _$PeriodCopyWithImpl<$Res, $Val extends Period>
 }
 
 /// @nodoc
-abstract class _$$_PeriodCopyWith<$Res> implements $PeriodCopyWith<$Res> {
-  factory _$$_PeriodCopyWith(_$_Period value, $Res Function(_$_Period) then) =
-      __$$_PeriodCopyWithImpl<$Res>;
+abstract class _$$PeriodStateImplCopyWith<$Res>
+    implements $PeriodStateCopyWith<$Res> {
+  factory _$$PeriodStateImplCopyWith(
+          _$PeriodStateImpl value, $Res Function(_$PeriodStateImpl) then) =
+      __$$PeriodStateImplCopyWithImpl<$Res>;
   @override
   @useResult
   $Res call({int period});
 }
 
 /// @nodoc
-class __$$_PeriodCopyWithImpl<$Res>
-    extends _$PeriodCopyWithImpl<$Res, _$_Period>
-    implements _$$_PeriodCopyWith<$Res> {
-  __$$_PeriodCopyWithImpl(_$_Period _value, $Res Function(_$_Period) _then)
+class __$$PeriodStateImplCopyWithImpl<$Res>
+    extends _$PeriodStateCopyWithImpl<$Res, _$PeriodStateImpl>
+    implements _$$PeriodStateImplCopyWith<$Res> {
+  __$$PeriodStateImplCopyWithImpl(
+      _$PeriodStateImpl _value, $Res Function(_$PeriodStateImpl) _then)
       : super(_value, _then);
 
   @pragma('vm:prefer-inline')
@@ -75,7 +80,7 @@ class __$$_PeriodCopyWithImpl<$Res>
   $Res call({
     Object? period = null,
   }) {
-    return _then(_$_Period(
+    return _then(_$PeriodStateImpl(
       period: null == period
           ? _value.period
           : period // ignore: cast_nullable_to_non_nullable
@@ -86,22 +91,22 @@ class __$$_PeriodCopyWithImpl<$Res>
 
 /// @nodoc
 
-class _$_Period implements _Period {
-  _$_Period({required this.period});
+class _$PeriodStateImpl implements _PeriodState {
+  const _$PeriodStateImpl({required this.period});
 
   @override
   final int period;
 
   @override
   String toString() {
-    return 'Period(period: $period)';
+    return 'PeriodState(period: $period)';
   }
 
   @override
   bool operator ==(dynamic other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$_Period &&
+            other is _$PeriodStateImpl &&
             (identical(other.period, period) || other.period == period));
   }
 
@@ -111,17 +116,17 @@ class _$_Period implements _Period {
   @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
-  _$$_PeriodCopyWith<_$_Period> get copyWith =>
-      __$$_PeriodCopyWithImpl<_$_Period>(this, _$identity);
+  _$$PeriodStateImplCopyWith<_$PeriodStateImpl> get copyWith =>
+      __$$PeriodStateImplCopyWithImpl<_$PeriodStateImpl>(this, _$identity);
 }
 
-abstract class _Period implements Period {
-  factory _Period({required final int period}) = _$_Period;
+abstract class _PeriodState implements PeriodState {
+  const factory _PeriodState({required final int period}) = _$PeriodStateImpl;
 
   @override
   int get period;
   @override
   @JsonKey(ignore: true)
-  _$$_PeriodCopyWith<_$_Period> get copyWith =>
+  _$$PeriodStateImplCopyWith<_$PeriodStateImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }

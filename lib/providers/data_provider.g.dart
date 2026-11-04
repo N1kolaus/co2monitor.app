@@ -6,34 +6,23 @@ part of 'data_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$dataHash() => r'42a53ebc18ecb1dbcd26e44df77ea0365e0e617b';
+String _$co2DataHash() => r'68c0c020cd90180d62fd7e8f119ab8aab401ed93';
 
-/// See also [Data].
-@ProviderFor(Data)
-final dataProvider =
-    AutoDisposeAsyncNotifierProvider<Data, List<Co2Data>>.internal(
-  Data.new,
-  name: r'dataProvider',
+/// The dashboard data: the readings for the selected period plus the most
+/// recent reading, kept up to date by a background poll every minute.
+///
+/// Copied from [Co2Data].
+@ProviderFor(Co2Data)
+final co2DataProvider =
+    AutoDisposeAsyncNotifierProvider<Co2Data, Co2Dashboard>.internal(
+  Co2Data.new,
+  name: r'co2DataProvider',
   debugGetCreateSourceHash:
-      const bool.fromEnvironment('dart.vm.product') ? null : _$dataHash,
+      const bool.fromEnvironment('dart.vm.product') ? null : _$co2DataHash,
   dependencies: null,
   allTransitiveDependencies: null,
 );
 
-typedef _$Data = AutoDisposeAsyncNotifier<List<Co2Data>>;
-String _$latestDataHash() => r'fccb79970ce5121948708662f77f399b887e660f';
-
-/// See also [LatestData].
-@ProviderFor(LatestData)
-final latestDataProvider =
-    AutoDisposeAsyncNotifierProvider<LatestData, Co2Data>.internal(
-  LatestData.new,
-  name: r'latestDataProvider',
-  debugGetCreateSourceHash:
-      const bool.fromEnvironment('dart.vm.product') ? null : _$latestDataHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
-
-typedef _$LatestData = AutoDisposeAsyncNotifier<Co2Data>;
-// ignore_for_file: unnecessary_raw_strings, subtype_of_sealed_class, invalid_use_of_internal_member, do_not_use_environment, prefer_const_constructors, public_member_api_docs, avoid_private_typedef_functions
+typedef _$Co2Data = AutoDisposeAsyncNotifier<Co2Dashboard>;
+// ignore_for_file: type=lint
+// ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member

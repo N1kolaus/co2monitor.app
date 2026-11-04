@@ -1,45 +1,45 @@
-import 'package:co2app/providers/data_provider.dart';
-import 'package:co2app/providers/period_provider.dart';
+
+import 'package:co2app/helpers/interval_helper.dart';
+import 'package:co2app/models/co2_data.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import '../helpers/interval_helper.dart';
+/// A line chart of the temperature over the last [period] hours.
+class TempLineChartWidget extends StatelessWidget {
+  const TempLineChartWidget(this.points, {super.key, required this.period});
 
-class TempLineChartWidget extends ConsumerWidget {
-  final List<Co2Data> points;
-  final IntervallHelper intervalHelper = IntervallHelper();
+  final List<Co2Reading> points;
+  final int period;
 
-  TempLineChartWidget(this.points, {Key? key}) : super(key: key);
+  /// X-axis positions: the index of every reading.
+  List<FlSpot> _spots(double Function(Co2Reading) value) {
+    return [
+      for (var i = 0; i < points.length; i++)
+        FlSpot(i.toDouble(), value(points[i])),
+    ];
+  }
 
   Widget _bottomTitleWidget(double value, TitleMeta meta) {
-    const style = TextStyle(
-      fontSize: 12,
-    );
-    var text = DateFormat("HH:mm").format(points[value.toInt()].date);
-    if (value.toInt() > points.length - 3) {
+    const style = TextStyle(fontSize: 12);
+    final index = value.toInt();
+    final String text;
+    if (index < 0 || index > points.length - 3) {
+      // Blank the last few labels so the chart is not cramped.
       text = "";
+    } else {
+      text = DateFormat("HH:mm").format(points[index].date);
     }
 
     return SideTitleWidget(
       axisSide: meta.axisSide,
       space: 10,
-      child: Text(
-        text,
-        style: style,
-      ),
+      child: Text(text, style: style),
     );
-  }
-
-  int _getInterval(dynamic context, int period) {
-    return intervalHelper.calculateInterval(context, period);
   }
 
   Widget _leftTitleWidget(double value, TitleMeta meta) {
-    const style = TextStyle(
-      fontSize: 12,
-    );
+    const style = TextStyle(fontSize: 12);
     String text = '';
     switch (value.toInt()) {
       case 5:
@@ -71,21 +71,23 @@ class TempLineChartWidget extends ConsumerWidget {
     return SideTitleWidget(
       axisSide: meta.axisSide,
       space: 10,
-      child: Text(
-        text,
-        style: style,
-      ),
+      child: Text(text, style: style),
     );
   }
 
   double _getMaxTempValue() {
-    var max = points.reduce((c, n) => c.temp > n.temp ? c : n).temp.toDouble();
-    return max;
+    return points.fold<double>(0, (m, p) => p.temp > m ? p.temp : m);
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final periodProv = ref.watch(periodNotifierProvider);
+  Widget build(BuildContext context) {
+    if (points.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final interval = const IntervalHelper()
+        .calculateInterval(context, period)
+        .toDouble();
 
     return OrientationBuilder(
       builder: (context, orientation) {
@@ -102,14 +104,7 @@ class TempLineChartWidget extends ConsumerWidget {
               LineChartData(
                 lineBarsData: [
                   LineChartBarData(
-                    spots: points
-                        .map(
-                          (point) => FlSpot(
-                            points.indexOf(point).toDouble(),
-                            point.temp.toDouble(),
-                          ),
-                        )
-                        .toList(),
+                    spots: _spots((p) => p.temp),
                     barWidth: 4,
                     isCurved: false,
                     dotData: const FlDotData(show: false),
@@ -121,50 +116,37 @@ class TempLineChartWidget extends ConsumerWidget {
                 titlesData: FlTitlesData(
                   bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
-                        showTitles: true,
-                        interval:
-                            _getInterval(context, periodProv.value!.period)
-                                .toDouble(),
-                        reservedSize: 50,
-                        getTitlesWidget: _bottomTitleWidget),
+                      showTitles: true,
+                      interval: interval,
+                      reservedSize: 50,
+                      getTitlesWidget: _bottomTitleWidget,
+                    ),
                   ),
                   leftTitles: AxisTitles(
-                    // axisNameSize: 30,
-                    // axisNameWidget: Align(
-                    //   alignment: Alignment.center,
-                    //   child: Text(
-                    //     "Temperature",
-                    //     style: TextStyle(
-                    //       fontSize:
-                    //           MediaQuery.of(context).size.height * 0.01 * 1.7,
-                    //       fontWeight: FontWeight.bold,
-                    //     ),
-                    //   ),
-                    // ),
                     sideTitles: SideTitles(
-                        showTitles: true,
-                        interval: 5,
-                        reservedSize: 40,
-                        getTitlesWidget: _leftTitleWidget),
+                      showTitles: true,
+                      interval: 5,
+                      reservedSize: 40,
+                      getTitlesWidget: _leftTitleWidget,
+                    ),
                   ),
                   topTitles: const AxisTitles(
                     sideTitles: SideTitles(showTitles: false),
                   ),
                   rightTitles: AxisTitles(
                     sideTitles: SideTitles(
-                        showTitles: true,
-                        interval: 5,
-                        reservedSize: 40,
-                        getTitlesWidget: _leftTitleWidget),
+                      showTitles: true,
+                      interval: 5,
+                      reservedSize: 40,
+                      getTitlesWidget: _leftTitleWidget,
+                    ),
                   ),
                 ),
                 gridData: FlGridData(
                   show: true,
                   drawVerticalLine: true,
                   horizontalInterval: 1,
-                  verticalInterval:
-                      _getInterval(context, periodProv.value!.period)
-                          .toDouble(),
+                  verticalInterval: interval,
                   checkToShowHorizontalLine: (double value) {
                     return value == 5 ||
                         value == 10 ||

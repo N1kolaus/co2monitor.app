@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 
-class IntervallHelper {
+/// Computes the x-axis title interval (in data points) for the line charts,
+/// scaled to the selected period and the screen width.
+class IntervalHelper {
+  const IntervalHelper();
+
   int calculateInterval(BuildContext context, int period) {
-    int interval = 10;
-    double width = MediaQuery.of(context).size.width;
+    var interval = 10;
     switch (period) {
       case 1:
-        interval = (interval).round();
+        interval = interval.round();
         break;
       case 3:
         interval = (interval * 3).round();
@@ -25,6 +28,7 @@ class IntervallHelper {
         break;
     }
 
+    final width = MediaQuery.of(context).size.width;
     if (width > 800 && width < 1200) {
       interval = (interval / 2).round();
     }

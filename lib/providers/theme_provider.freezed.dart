@@ -55,20 +55,21 @@ class _$MyThemeCopyWithImpl<$Res, $Val extends MyTheme>
 }
 
 /// @nodoc
-abstract class _$$_MyThemeCopyWith<$Res> implements $MyThemeCopyWith<$Res> {
-  factory _$$_MyThemeCopyWith(
-          _$_MyTheme value, $Res Function(_$_MyTheme) then) =
-      __$$_MyThemeCopyWithImpl<$Res>;
+abstract class _$$MyThemeImplCopyWith<$Res> implements $MyThemeCopyWith<$Res> {
+  factory _$$MyThemeImplCopyWith(
+          _$MyThemeImpl value, $Res Function(_$MyThemeImpl) then) =
+      __$$MyThemeImplCopyWithImpl<$Res>;
   @override
   @useResult
   $Res call({bool isDark});
 }
 
 /// @nodoc
-class __$$_MyThemeCopyWithImpl<$Res>
-    extends _$MyThemeCopyWithImpl<$Res, _$_MyTheme>
-    implements _$$_MyThemeCopyWith<$Res> {
-  __$$_MyThemeCopyWithImpl(_$_MyTheme _value, $Res Function(_$_MyTheme) _then)
+class __$$MyThemeImplCopyWithImpl<$Res>
+    extends _$MyThemeCopyWithImpl<$Res, _$MyThemeImpl>
+    implements _$$MyThemeImplCopyWith<$Res> {
+  __$$MyThemeImplCopyWithImpl(
+      _$MyThemeImpl _value, $Res Function(_$MyThemeImpl) _then)
       : super(_value, _then);
 
   @pragma('vm:prefer-inline')
@@ -76,7 +77,7 @@ class __$$_MyThemeCopyWithImpl<$Res>
   $Res call({
     Object? isDark = null,
   }) {
-    return _then(_$_MyTheme(
+    return _then(_$MyThemeImpl(
       isDark: null == isDark
           ? _value.isDark
           : isDark // ignore: cast_nullable_to_non_nullable
@@ -87,30 +88,22 @@ class __$$_MyThemeCopyWithImpl<$Res>
 
 /// @nodoc
 
-class _$_MyTheme with DiagnosticableTreeMixin implements _MyTheme {
-  _$_MyTheme({required this.isDark});
+class _$MyThemeImpl implements _MyTheme {
+  _$MyThemeImpl({required this.isDark});
 
   @override
   final bool isDark;
 
   @override
-  String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
+  String toString() {
     return 'MyTheme(isDark: $isDark)';
-  }
-
-  @override
-  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    super.debugFillProperties(properties);
-    properties
-      ..add(DiagnosticsProperty('type', 'MyTheme'))
-      ..add(DiagnosticsProperty('isDark', isDark));
   }
 
   @override
   bool operator ==(dynamic other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$_MyTheme &&
+            other is _$MyThemeImpl &&
             (identical(other.isDark, isDark) || other.isDark == isDark));
   }
 
@@ -120,17 +113,17 @@ class _$_MyTheme with DiagnosticableTreeMixin implements _MyTheme {
   @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
-  _$$_MyThemeCopyWith<_$_MyTheme> get copyWith =>
-      __$$_MyThemeCopyWithImpl<_$_MyTheme>(this, _$identity);
+  _$$MyThemeImplCopyWith<_$MyThemeImpl> get copyWith =>
+      __$$MyThemeImplCopyWithImpl<_$MyThemeImpl>(this, _$identity);
 }
 
 abstract class _MyTheme implements MyTheme {
-  factory _MyTheme({required final bool isDark}) = _$_MyTheme;
+  factory _MyTheme({required final bool isDark}) = _$MyThemeImpl;
 
   @override
   bool get isDark;
   @override
   @JsonKey(ignore: true)
-  _$$_MyThemeCopyWith<_$_MyTheme> get copyWith =>
+  _$$MyThemeImplCopyWith<_$MyThemeImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }

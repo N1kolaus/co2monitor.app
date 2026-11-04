@@ -1,82 +1,42 @@
-import 'dart:async';
-
+import 'package:co2app/providers/data_provider.dart';
 import 'package:co2app/providers/date_format_provider.dart';
 import 'package:co2app/providers/period_provider.dart';
 import 'package:co2app/widgets/temp_line_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../providers/data_provider.dart';
 import '../widgets/co2_line_chart.dart';
 
-class LineChartScreen extends ConsumerStatefulWidget {
+/// The dashboard body: the latest reading plus the CO2 and temperature
+/// charts for the selected period.
+class LineChartScreen extends ConsumerWidget {
   const LineChartScreen({super.key});
 
   @override
-  LineChartScreenState createState() => LineChartScreenState();
-}
-
-class LineChartScreenState extends ConsumerState<LineChartScreen> {
-  Timer? _timer;
-
-  @override
-  void initState() {
-    super.initState();
-    ref.read(periodNotifierProvider);
-  }
-
-  Future<void> fetchLatestDataEveryMinute(BuildContext context) async {
-    _timer?.cancel();
-    _timer = Timer.periodic(const Duration(seconds: 60), (_) async {
-      final latestData =
-          await ref.watch(latestDataProvider.notifier).updateLatestData();
-      await ref.watch(dataProvider.notifier).updateData(latestData);
-    });
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final dataProv = ref.watch(dataProvider);
-    final latestDataProv = ref.watch(latestDataProvider);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final dataProv = ref.watch(co2DataProvider);
     final dateFormatter = ref.watch(dateFormatterProvider);
-    final periodProv = ref.watch(periodNotifierProvider);
-
-    fetchLatestDataEveryMinute(context);
+    final period =
+        ref.watch(periodNotifierProvider.select((s) => s.value?.period ?? 1));
 
     return dataProv.when(
-      data: (data) => ListView(
+      data: (dashboard) => ListView(
         children: <Widget>[
-          latestDataProv.when(
-            data: (latestData) => Center(
-              child: Text(
-                "${dateFormatter.format(latestData.date)}, CO2: ${latestData.co2}, Temp: ${latestData.temp}, Period: ${periodProv.value!.period}h",
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onBackground,
-                  fontWeight: FontWeight.bold,
-                  fontSize: MediaQuery.of(context).size.height * 0.01 * 1.7,
-                ),
-              ),
-            ),
-            error: (err, _) => Center(
-              child: Text("Data could not be loaded: \n$err"),
-            ),
-            loading: () => Center(
-              child: CircularProgressIndicator(
-                color: Theme.of(context).colorScheme.primary,
+          Center(
+            child: Text(
+              "${dateFormatter.format(dashboard.latest.date)}, CO2: ${dashboard.latest.co2}, Temp: ${dashboard.latest.temp}, Period: ${period}h",
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onBackground,
+                fontWeight: FontWeight.bold,
+                fontSize: MediaQuery.of(context).size.height * 0.01 * 1.7,
               ),
             ),
           ),
-          Co2LineChartWidget(data),
+          Co2LineChartWidget(dashboard.series, period: period),
           Divider(
             color: Theme.of(context).colorScheme.outline,
           ),
-          TempLineChartWidget(data),
+          TempLineChartWidget(dashboard.series, period: period),
         ],
       ),
       error: (err, _) => Center(

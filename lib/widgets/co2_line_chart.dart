@@ -1,46 +1,47 @@
 import 'dart:math';
 
-import 'package:co2app/providers/data_provider.dart';
-import 'package:co2app/providers/period_provider.dart';
+import 'package:co2app/helpers/interval_helper.dart';
+import 'package:co2app/models/co2_data.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import '../helpers/interval_helper.dart';
+/// A line chart of CO2 values over the last [period] hours, with threshold
+/// lines at 800, 1000 and 1200 ppm.
+class Co2LineChartWidget extends StatelessWidget {
+  const Co2LineChartWidget(this.points, {super.key, required this.period});
 
-class Co2LineChartWidget extends ConsumerWidget {
-  final List<Co2Data> points;
-  final IntervallHelper intervalHelper = IntervallHelper();
+  final List<Co2Reading> points;
+  final int period;
 
-  Co2LineChartWidget(this.points, {Key? key}) : super(key: key);
+  /// X-axis positions: the index of every reading.
+  List<FlSpot> _spots(double Function(Co2Reading) value) {
+    return [
+      for (var i = 0; i < points.length; i++)
+        FlSpot(i.toDouble(), value(points[i])),
+    ];
+  }
 
   Widget _bottomTitleWidget(double value, TitleMeta meta) {
-    var text = DateFormat("HH:mm").format(points[value.toInt()].date);
-    if (value.toInt() > points.length - 3) {
+    const style = TextStyle(fontSize: 12);
+    final index = value.toInt();
+    final String text;
+    if (index < 0 || index > points.length - 3) {
+      // Blank the last few labels so the chart is not cramped.
       text = "";
+    } else {
+      text = DateFormat("HH:mm").format(points[index].date);
     }
 
     return SideTitleWidget(
       axisSide: meta.axisSide,
       space: 10,
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontSize: 12,
-        ),
-      ),
+      child: Text(text, style: style),
     );
-  }
-
-  int _getInterval(dynamic context, int period) {
-    return intervalHelper.calculateInterval(context, period);
   }
 
   Widget _leftTitleWidget(double value, TitleMeta meta) {
-    const style = TextStyle(
-      fontSize: 12,
-    );
+    const style = TextStyle(fontSize: 12);
     String text = '';
     switch (value.toInt()) {
       case 500:
@@ -62,28 +63,30 @@ class Co2LineChartWidget extends ConsumerWidget {
         text = '3k';
         break;
       case 3500:
-        text = '3.k';
+        text = '3.5k';
         break;
     }
 
     return SideTitleWidget(
       axisSide: meta.axisSide,
       space: 10,
-      child: Text(
-        text,
-        style: style,
-      ),
+      child: Text(text, style: style),
     );
   }
 
   double _getMaxCo2Value() {
-    var max = points.reduce((c, n) => c.co2 > n.co2 ? c : n).co2.toDouble();
-    return max;
+    return points.fold<double>(0, (m, p) => p.co2.toDouble() > m ? p.co2.toDouble() : m);
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final periodProv = ref.watch(periodNotifierProvider);
+  Widget build(BuildContext context) {
+    if (points.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final interval = const IntervalHelper()
+        .calculateInterval(context, period)
+        .toDouble();
 
     return OrientationBuilder(
       builder: (context, orientation) {
@@ -100,54 +103,29 @@ class Co2LineChartWidget extends ConsumerWidget {
               LineChartData(
                 lineBarsData: [
                   LineChartBarData(
-                    spots: points
-                        .map(
-                          (point) => FlSpot(
-                            points.indexOf(point).toDouble(),
-                            point.co2.toDouble(),
-                          ),
-                        )
-                        .toList(),
+                    spots: _spots((p) => p.co2.toDouble()),
                     barWidth: 4,
                     isCurved: false,
                     dotData: const FlDotData(show: false),
                     color: Theme.of(context).colorScheme.primary,
                   ),
                   LineChartBarData(
-                    spots: points
-                        .map(
-                          (point) => FlSpot(
-                            points.indexOf(point).toDouble(),
-                            800,
-                          ),
-                        )
-                        .toList(),
+                    spots: _spots((p) => 800),
+                    barWidth: 4,
                     isCurved: false,
                     dotData: const FlDotData(show: false),
                     color: Colors.green.withOpacity(0.5),
                   ),
                   LineChartBarData(
-                    spots: points
-                        .map(
-                          (point) => FlSpot(
-                            points.indexOf(point).toDouble(),
-                            1000,
-                          ),
-                        )
-                        .toList(),
+                    spots: _spots((p) => 1000),
+                    barWidth: 4,
                     isCurved: false,
                     dotData: const FlDotData(show: false),
                     color: Colors.orange.withOpacity(0.5),
                   ),
                   LineChartBarData(
-                    spots: points
-                        .map(
-                          (point) => FlSpot(
-                            points.indexOf(point).toDouble(),
-                            1200,
-                          ),
-                        )
-                        .toList(),
+                    spots: _spots((p) => 1200),
+                    barWidth: 4,
                     isCurved: false,
                     dotData: const FlDotData(show: false),
                     color: Colors.red.withOpacity(0.5),
@@ -158,50 +136,37 @@ class Co2LineChartWidget extends ConsumerWidget {
                 titlesData: FlTitlesData(
                   bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
-                        showTitles: true,
-                        interval:
-                            _getInterval(context, periodProv.value!.period)
-                                .toDouble(),
-                        reservedSize: 30,
-                        getTitlesWidget: _bottomTitleWidget),
+                      showTitles: true,
+                      interval: interval,
+                      reservedSize: 30,
+                      getTitlesWidget: _bottomTitleWidget,
+                    ),
                   ),
                   leftTitles: AxisTitles(
-                    // axisNameSize: 30,
-                    // axisNameWidget: Align(
-                    //   alignment: Alignment.center,
-                    //   child: Text(
-                    //     "CO2",
-                    //     style: TextStyle(
-                    //       fontSize:
-                    //           MediaQuery.of(context).size.height * 0.01 * 1.7,
-                    //       fontWeight: FontWeight.bold,
-                    //     ),
-                    //   ),
-                    // ),
                     sideTitles: SideTitles(
-                        showTitles: true,
-                        interval: 500,
-                        reservedSize: 40,
-                        getTitlesWidget: _leftTitleWidget),
+                      showTitles: true,
+                      interval: 500,
+                      reservedSize: 40,
+                      getTitlesWidget: _leftTitleWidget,
+                    ),
                   ),
                   topTitles: const AxisTitles(
                     sideTitles: SideTitles(showTitles: false),
                   ),
                   rightTitles: AxisTitles(
                     sideTitles: SideTitles(
-                        showTitles: true,
-                        interval: 500,
-                        reservedSize: 40,
-                        getTitlesWidget: _leftTitleWidget),
+                      showTitles: true,
+                      interval: 500,
+                      reservedSize: 40,
+                      getTitlesWidget: _leftTitleWidget,
+                    ),
                   ),
                 ),
                 gridData: FlGridData(
                   show: true,
                   drawVerticalLine: true,
                   horizontalInterval: 1,
-                  verticalInterval:
-                      _getInterval(context, periodProv.value!.period)
-                          .toDouble(),
+                  verticalInterval: interval,
                   checkToShowHorizontalLine: (double value) {
                     return value == 500 ||
                         value == 1000 ||

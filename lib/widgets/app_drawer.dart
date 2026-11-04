@@ -1,24 +1,24 @@
-import 'package:co2app/providers/init_provider.dart';
+import 'package:co2app/providers/api_config_provider.dart';
 import 'package:co2app/providers/period_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class AppDrawer extends ConsumerStatefulWidget {
+const _periods = [1, 3, 6, 12, 24, 48];
+
+/// Drawer with the time-period selector and the init-state reset.
+class AppDrawer extends ConsumerWidget {
   const AppDrawer({super.key});
 
-  @override
-  ConsumerState<ConsumerStatefulWidget> createState() => AppDrawerState();
-}
-
-class AppDrawerState extends ConsumerState<AppDrawer> {
-  final periods = [1, 3, 6, 12, 24, 48];
-
-  Future<void> onTabPeriod(int period, BuildContext context) async {
+  Future<void> _onPeriodSelected(int period, BuildContext context,
+      WidgetRef ref) async {
     await ref.read(periodNotifierProvider.notifier).setPeriod(period);
+    if (context.mounted) {
+      Navigator.pop(context);
+    }
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Drawer(
       child: Column(
         children: <Widget>[
@@ -41,7 +41,8 @@ class AppDrawerState extends ConsumerState<AppDrawer> {
                   onPressed: () {
                     Scaffold.of(context).closeDrawer();
                   },
-                  tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
+                  tooltip: MaterialLocalizations.of(context)
+                      .closeButtonTooltip,
                 );
               },
             ),
@@ -51,8 +52,7 @@ class AppDrawerState extends ConsumerState<AppDrawer> {
           ),
           Expanded(
             child: ListView.builder(
-              // shrinkWrap: false,
-              itemCount: periods.length,
+              itemCount: _periods.length,
               itemBuilder: (context, index) {
                 return ListTile(
                   leading: Icon(
@@ -60,7 +60,7 @@ class AppDrawerState extends ConsumerState<AppDrawer> {
                     color: Theme.of(context).colorScheme.secondary,
                   ),
                   title: Text(
-                    "${periods[index]} ${periods[index] > 1 ? "hours" : "hour"}",
+                    "${_periods[index]} ${_periods[index] > 1 ? "hours" : "hour"}",
                     style: TextStyle(
                         color: Theme.of(context).colorScheme.secondary,
                         fontWeight: FontWeight.bold,
@@ -68,10 +68,7 @@ class AppDrawerState extends ConsumerState<AppDrawer> {
                             MediaQuery.of(context).size.height * 0.01 * 1.7),
                   ),
                   onTap: () async {
-                    await onTabPeriod(periods[index], context);
-                    if (context.mounted) {
-                      Navigator.pop(context);
-                    }
+                    await _onPeriodSelected(_periods[index], context, ref);
                   },
                 );
               },
@@ -90,10 +87,11 @@ class AppDrawerState extends ConsumerState<AppDrawer> {
               style: TextStyle(
                   color: Theme.of(context).colorScheme.secondary,
                   fontWeight: FontWeight.bold,
-                  fontSize: MediaQuery.of(context).size.height * 0.01 * 1.7),
+                  fontSize:
+                      MediaQuery.of(context).size.height * 0.01 * 1.7),
             ),
             onTap: () {
-              ref.read(initStateProvider.notifier).resetInitState();
+              ref.read(apiConfigNotifierProvider.notifier).reset();
             },
           ),
         ],
