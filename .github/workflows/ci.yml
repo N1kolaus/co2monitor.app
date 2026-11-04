@@ -10,8 +10,6 @@ jobs:
         runs-on: ubuntu-latest
         permissions:
             contents: write
-        env:
-            GITHUB_TOKEN: ${{ secrets.SUPERSECRET }}
         steps:
             - name: Checkout
               uses: actions/checkout@v3
@@ -25,7 +23,7 @@ jobs:
             - name: Set up Flutter
               uses: subosito/flutter-action@v2
               with:
-                                    flutter-version: "3.16.9"
+                  flutter-version: "3.16.9"
             - run: flutter pub get
 
             - run: flutter build apk --release
@@ -35,5 +33,5 @@ jobs:
               with:
                   files: |
                       build/app/outputs/flutter-apk/app-release.apk
-                  tag_name: ${{ github.ref }}
-                  token: ${{ secrets.SUPERSECRET }}
+                  tag_name: ${{ github.ref_name }}
+                  token: ${{ github.token }}
