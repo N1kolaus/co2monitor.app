@@ -26,7 +26,7 @@ class LineChartScreen extends ConsumerWidget {
             child: Text(
               "${dateFormatter.format(dashboard.latest.date)}, CO2: ${dashboard.latest.co2}, Temp: ${dashboard.latest.temp}, Period: ${period}h",
               style: TextStyle(
-                color: Theme.of(context).colorScheme.onBackground,
+                color: Theme.of(context).colorScheme.onSurface,
                 fontWeight: FontWeight.bold,
                 fontSize: MediaQuery.of(context).size.height * 0.01 * 1.7,
               ),

@@ -26,7 +26,7 @@ class AppDrawer extends ConsumerWidget {
             title: Text(
               "Set time period",
               style: TextStyle(
-                color: Theme.of(context).colorScheme.onBackground,
+                color: Theme.of(context).colorScheme.onSurface,
                 fontSize: MediaQuery.of(context).size.height * 0.01 * 2,
               ),
             ),

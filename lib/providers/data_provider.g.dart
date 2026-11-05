@@ -6,7 +6,7 @@ part of 'data_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$co2DataHash() => r'68c0c020cd90180d62fd7e8f119ab8aab401ed93';
+String _$co2DataHash() => r'6e43247b7237db2c4b58678f8d238ec71cdf4243';
 
 /// The dashboard data: the readings for the selected period plus the most
 /// recent reading, kept up to date by a background poll every minute.
